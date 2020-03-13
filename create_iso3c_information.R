@@ -97,9 +97,9 @@ centroids_tmp$iso3c = countrycode::countrycode(centroids_tmp$country, origin="is
 centroids_tmp$iso3c[idx_Namibia] = "NAM"
 # Can we get a bit better by using country names instead
 idx_issues = which(is.na(centroids_tmp$iso3c)==TRUE)
-centroids_tmp$iso3c[idx_issues] = countrycode(centroids_tmp$name[idx_issues], 
-                                              origin="country.name", 
-                                              destination="iso3c")
+centroids_tmp$iso3c[idx_issues] = countrycode::countrycode(centroids_tmp$name[idx_issues], 
+                                                           origin="country.name", 
+                                                           destination="iso3c")
 # World Bank uses XKX for Kosovo (XK), so just use this.
 centroids_tmp$iso3c[which(centroids_tmp$name=="Kosovo")] = "XKX"
 # PSE results from both PS (Palestinian territory) and GZ (Gaza strip). Simplify (keep only 1)
@@ -116,12 +116,15 @@ iso3c_data_all = merge(x=WB_data,y=centroids_tmp,
 iso3c_data_all = iso3c_data_all[,c(1,2,3,4,5,7,8)]
 colnames(iso3c_data_all)[3] = "name"
 
+# Get rid of entries with no iso3c
+iso3c_data_all = iso3c_data_all[which(!is.na(iso3c_data_all$iso3c)),]
+
 # Set row names
 rownames(iso3c_data_all) = iso3c_data_all$iso3c
 # Take stock of what we are missing
 missing_idx = which(!complete.cases(iso3c_data_all))
 missing_iso3c = iso3c_data_all$iso3c[missing_idx]
-# List of iso3c codes we are happy to remove
+# List of iso3c codes we are happy to remove for now
 to_remove = c("ATA", # Antartica
               "ATF", # https://en.wikipedia.org/wiki/French_Southern_and_Antarctic_Lands
               "BVT", # Bouvet Island
@@ -301,9 +304,9 @@ iso3c_data_all$longitude = as.numeric(iso3c_data_all$longitude)
 
 # and sort by iso3c code
 iso3c_data_all = iso3c_data_all[order(iso3c_data_all$iso3c),]
-rownames(iso3c_data_all) = iso3c_data_all$iso3c
 
-write.csv(iso3c_data_all, "iso3c_pop_GDP_centroids.Rds",
+write.csv(iso3c_data_all, 
+          file = sprintf("%s/iso3c_pop_GDP_centroids.csv", TOP_DIR_CODE),
           row.names = FALSE)
 
 
