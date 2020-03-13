@@ -307,7 +307,8 @@ iso3c_data_all = iso3c_data_all[order(iso3c_data_all$iso3c),]
 
 write.csv(iso3c_data_all, 
           file = sprintf("%s/iso3c_pop_GDP_centroids.csv", TOP_DIR_CODE),
-          row.names = FALSE)
+          row.names = FALSE,
+          na = "")
 
 
 
