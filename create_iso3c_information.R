@@ -1,18 +1,31 @@
-# Create a master list of countries/places with all the information we require here:
+# Create a master list of countries/territories with some information:
 # - centroids
 # - population
 # - GDP
 # - ..
 
+# LATEST_VALUES_GENERAL
+#
+# For each country/country group in a data frame v, find the latest
+# value
+latest_values_general <- function(v,c1,c2) {
+  l_c1 <- unique(v[[c1]])
+  idx <- c()
+  for (c in l_c1) {
+    tmp <- v[which(v[[c1]] == c),]
+    tmp <- tmp[order(tmp[[c2]], decreasing = TRUE),]
+    idx1 <- which(v[[c2]] == tmp[[c2]][1])
+    idx2 <- which(v[[c1]] == c)
+    idx <- c(idx,intersect(idx1,idx2))
+  }
+  return(v[idx,])
+}
+
+
 library(wbstats)
 
 # Set top directory for code
 TOP_DIR_CODE = here::here()
-if (length(TOP_DIR_CODE) == 0) {
-  TOP_DIR_CODE = rprojroot::find_root(is_git_root,".")
-}
-# Set other directories
-source(sprintf("%s/set_directories.R", TOP_DIR_CODE))
 
 # WORLD BANK DATA
 # The following are "area" codes (Arab World, World, etc.) that we remove in the list of ISOs
@@ -67,20 +80,19 @@ WB_data["PRK",]$GDP = 1300 # https://en.wikipedia.org/wiki/Economy_of_North_Kore
 WB_data["SXM",]$GDP = 15400 # https://en.wikipedia.org/wiki/Economy_of_Saint_Martin (2008)
 WB_data["VGB",]$GDP = 34246 # https://en.wikipedia.org/wiki/Economy_of_the_British_Virgin_Islands
 
-# Fill in info for one obviously missing case
-WB_data = rbind(WB_data,
-                c("TWN","TW","Taiwan","23780452","24828"))
+# Fill in info for one missing case
+WB_data = rbind(WB_data, c("TWN","TW","Taiwan","23780452","24828"))
 # Re-run row names after latest update
 rownames(WB_data) = WB_data$iso3c
 
 
 
 ## CENTROIDS
-centroids_tmp = read.csv(sprintf("%s/Country_centroids.csv", DIR_DATA_RAW), stringsAsFactors = FALSE)
+centroids_tmp = read.csv("centroids.csv", stringsAsFactors = FALSE)
 # Get index of Namibia, because it will go wrong (NA..)
 idx_Namibia = which(centroids_tmp$name == "Namibia")
 # Convert most stuff to iso3c without problems
-centroids_tmp$iso3c = countrycode(centroids_tmp$country, origin="iso2c", destination="iso3c")
+centroids_tmp$iso3c = countrycode::countrycode(centroids_tmp$country, origin="iso2c", destination="iso3c")
 # Fix Namibia
 centroids_tmp$iso3c[idx_Namibia] = "NAM"
 # Can we get a bit better by using country names instead
@@ -126,7 +138,7 @@ missing_idx = which(!complete.cases(iso3c_data_all))
 missing_iso3c = iso3c_data_all$iso3c[missing_idx]
 
 # Load a file with a lot of information and try to find remaining info in there
-countries_long = read.csv(file = sprintf("%s/country_centroids_az8.csv", DIR_DATA_RAW),
+countries_long = read.csv(file = "country_centroids_az8.csv",
                           stringsAsFactors = FALSE)
 # Get rid of the first few columns which are useless here
 countries_long = countries_long[,7:dim(countries_long)[2]]
@@ -291,8 +303,8 @@ iso3c_data_all$longitude = as.numeric(iso3c_data_all$longitude)
 iso3c_data_all = iso3c_data_all[order(iso3c_data_all$iso3c),]
 rownames(iso3c_data_all) = iso3c_data_all$iso3c
 
-saveRDS(iso3c_data_all,
-        sprintf("%s/iso3c_pop_GDP_centroids.Rds", DIR_DATA_PROCESSED_GLOBAL))
+write.csv(iso3c_data_all, "iso3c_pop_GDP_centroids.Rds",
+          row.names = FALSE)
 
 
 
